@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -44,9 +45,23 @@ func main() {
 	}
 
 	valor := result["dolar"]
+
+	// file 1
 	err = ioutil.WriteFile("cotacao.txt", []byte(fmt.Sprintf("Dólar: %s", valor)), 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Dólar: %s", valor)
+
+	// file 2
+	file, err := os.Create("fileCotacoes.txt")
+	if err != nil {
+		log.Printf("erro %v ao criar arquivo %v\n", err.Error(), file)
+	}
+	defer file.Close()
+	_, err = file.WriteString(fmt.Sprintf("Dólar: %s", valor))
+	if err != nil {
+		log.Printf("erro %v ao escrever no arquivo %v\n", err.Error(), file)
+	}
+
+	fmt.Printf("Dólar: %s\n", valor)
 }

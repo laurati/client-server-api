@@ -42,15 +42,16 @@ func (h *CotacaoHandler) GetCotacao(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := map[string]string{"dolar": cotacao.Bid}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
 	// jsonResponse, err := json.Marshal(response)
 	// if err != nil {
 	// 	log.Printf("Erro ao serializar resposta JSON: %v", err)
 	// 	http.Error(w, "Erro interno", http.StatusInternalServerError)
 	// 	return
 	// }
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 	// w.Write(jsonResponse)
 	json.NewEncoder(w).Encode(response)
 }

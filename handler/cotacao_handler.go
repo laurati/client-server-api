@@ -24,7 +24,7 @@ func NewCotacaoHandler(Repo *repository.CotacaoRepo) *CotacaoHandler {
 }
 
 func (h *CotacaoHandler) GetCotacao(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(r.Context(), 200*time.Millisecond)
 	defer cancel()
 
 	cotacao, err := getCotacao(ctx)
@@ -33,7 +33,7 @@ func (h *CotacaoHandler) GetCotacao(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel = context.WithTimeout(r.Context(), 100*time.Millisecond)
+	ctx, cancel = context.WithTimeout(r.Context(), 10*time.Millisecond)
 	defer cancel()
 	err = h.Repo.CreateCotacao(ctx, cotacao)
 	if err != nil {
@@ -55,24 +55,18 @@ func (h *CotacaoHandler) GetCotacao(w http.ResponseWriter, r *http.Request) {
 
 func getCotacao(ctx context.Context) (*entity.Cotacao, error) {
 
-	var req *http.Request
-	var err error
-
-	select {
-	case <-ctx.Done():
-		log.Println("timeout máximo para chamar a API de cotação do dólar é de 200ms")
-
-	case <-time.After(200 * time.Millisecond):
-		log.Println("chamada ok da API de cotação do dólar")
-		req, err = http.NewRequestWithContext(ctx, "GET", "https://economia.awesomeapi.com.br/json/last/USD-BRL", nil)
-		if err != nil {
-			return nil, err
-		}
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://economia.awesomeapi.com.br/json/last/USD-BRL", nil)
+	if err != nil {
+		return nil, err
 	}
 
 	client := http.DefaultClient
 	resp, err := client.Do(req)
 	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Println("o timeout máximo para chamar a API de cotação do dólar deverá ser de 200ms")
+			return nil, err
+		}
 		return nil, err
 	}
 	defer resp.Body.Close()

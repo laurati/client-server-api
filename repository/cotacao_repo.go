@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"log"
-	"time"
 
 	"github.com/laurati/client-server-api/entity"
 )
@@ -21,18 +20,22 @@ func NewCotacaoRepo(db *sql.DB) *CotacaoRepo {
 
 func (c *CotacaoRepo) CreateCotacao(ctx context.Context, cotacao *entity.Cotacao) error {
 
-	select {
-	case <-ctx.Done():
-		log.Println("timeout máximo para inserir dados no db é 10ms")
-
-	case <-time.After(100 * time.Millisecond):
-		_, err := c.db.ExecContext(ctx, "INSERT INTO cotacoes (valor) VALUES (?)", cotacao.Bid)
-		if err != nil {
-			log.Printf("Erro ao inserir cotação no banco de dados: %v", err)
-			return err
-		}
-		log.Println("cotacao inserida no db com sucesso")
+	stmt, err := c.db.PrepareContext(ctx, "INSERT INTO cotacoes (valor) VALUES (?)")
+	if err != nil {
+		log.Printf("Erro ao preparar a declaração SQL: %v", err)
+		return err
 	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, cotacao.Bid)
+	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Fatalln("o timeout máximo para persistir os dados no banco deverá ser de 10ms")
+		}
+		log.Printf("Erro ao inserir cotação no banco de dados: %v", err)
+		return err
+	}
+	log.Println("cotacao inserida no db com sucesso")
 
 	return nil
 }

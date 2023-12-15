@@ -11,22 +11,15 @@ import (
 )
 
 func main() {
-	ctx, cancel := context.WithTimeout(context.Background(), 400*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
 	defer cancel()
 
-	var req *http.Request
-	var err error
-
-	select {
-	case <-ctx.Done():
-		log.Println("timeout máximo de 300ms para receber o resultado do server")
-
-	case <-time.After(300 * time.Millisecond):
-		log.Println("recebido com sucesso dados do server")
-		req, err = http.NewRequestWithContext(ctx, "GET", "http://localhost:8080/cotacao", nil)
-		if err != nil {
-			log.Fatal(err)
+	req, err := http.NewRequestWithContext(ctx, "GET", "http://localhost:8080/cotacao", nil)
+	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Println("o client terá um timeout máximo de 300ms para receber o resultado do server")
 		}
+		log.Fatal(err)
 	}
 
 	resp, err := http.DefaultClient.Do(req)
@@ -55,4 +48,5 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Printf("Dólar: %s", valor)
 }

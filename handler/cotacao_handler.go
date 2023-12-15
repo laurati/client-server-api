@@ -42,16 +42,17 @@ func (h *CotacaoHandler) GetCotacao(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := map[string]string{"dolar": cotacao.Bid}
-	jsonResponse, err := json.Marshal(response)
-	if err != nil {
-		log.Printf("Erro ao serializar resposta JSON: %v", err)
-		http.Error(w, "Erro interno", http.StatusInternalServerError)
-		return
-	}
+	// jsonResponse, err := json.Marshal(response)
+	// if err != nil {
+	// 	log.Printf("Erro ao serializar resposta JSON: %v", err)
+	// 	http.Error(w, "Erro interno", http.StatusInternalServerError)
+	// 	return
+	// }
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(jsonResponse)
+	// w.Write(jsonResponse)
+	json.NewEncoder(w).Encode(response)
 }
 
 func getCotacao(ctx context.Context) (*entity.Cotacao, error) {
@@ -91,7 +92,6 @@ func getCotacao(ctx context.Context) (*entity.Cotacao, error) {
 	}
 
 	exchangeRate := exchangeRateMap[key]
-
 	cotacao := entity.Cotacao{
 		Bid: exchangeRate.Bid,
 	}
